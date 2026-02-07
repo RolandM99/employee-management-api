@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-unit:
+    name: Lint and Unit Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Unit tests with coverage
+        run: yarn test:cov --runInBand
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage
+          if-no-files-found: error
+
+  integration:
+    name: Integration and E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: employee_management
+          MYSQL_USER: employee_user
+          MYSQL_PASSWORD: employee_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uemployee_user -pemployee_pass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      APP_PORT: 3000
+      APP_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: employee_user
+      DB_PASSWORD: employee_pass
+      DB_DATABASE: employee_management
+      JWT_SECRET: test-super-secret-jwt-key
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: test-super-secret-refresh-key
+      JWT_REFRESH_EXPIRES_IN: 7d
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      MAIL_HOST: smtp.mailtrap.io
+      MAIL_PORT: 2525
+      MAIL_USER: ci-mail-user
+      MAIL_PASS: ci-mail-pass
+      MAIL_FROM: noreply@employee-management.com
+      MAIL_TRANSPORT: console
+      FRONTEND_RESET_URL: http://localhost:3001/reset-password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prepare .env for test processes
+        run: |
+          cat <<EOF > .env
+          APP_PORT=${APP_PORT}
+          APP_ENV=${APP_ENV}
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USERNAME=${DB_USERNAME}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_DATABASE=${DB_DATABASE}
+          JWT_SECRET=${JWT_SECRET}
+          JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+          JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+          JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+          REDIS_HOST=${REDIS_HOST}
+          REDIS_PORT=${REDIS_PORT}
+          MAIL_HOST=${MAIL_HOST}
+          MAIL_PORT=${MAIL_PORT}
+          MAIL_USER=${MAIL_USER}
+          MAIL_PASS=${MAIL_PASS}
+          MAIL_FROM=${MAIL_FROM}
+          MAIL_TRANSPORT=${MAIL_TRANSPORT}
+          FRONTEND_RESET_URL=${FRONTEND_RESET_URL}
+          EOF
+
+      - name: Wait for MySQL and Redis
+        run: |
+          for i in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/3306) >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          for i in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/6379) >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          (echo > /dev/tcp/127.0.0.1/3306) >/dev/null 2>&1
+          (echo > /dev/tcp/127.0.0.1/6379) >/dev/null 2>&1
+
+      - name: Run database migrations
+        run: yarn typeorm:migration:run
+
+      - name: Run e2e tests
+        run: yarn test:e2e
+
+      - name: Run mail queue integration tests
+        run: yarn test:mail:integration
