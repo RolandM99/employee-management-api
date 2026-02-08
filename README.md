@@ -1,6 +1,6 @@
 # Employee Management API
 
-NestJS v11 monorepo for employee management and attendance tracking, with JWT auth, queue-based emails, reporting exports, and CI automation.
+A NestJS v11 monorepo for employee management and attendance tracking, with JWT auth, queue-based emails, reporting exports, and CI automation.
 
 ## Overview
 
@@ -216,6 +216,22 @@ curl -L "$API/reports/attendance/daily.xlsx?date=2026-02-07" \
   -o attendance-2026-02-07.xlsx
 ```
 
+## Testing Report Downloads in Postman
+
+When calling report endpoints, do not rely on the response preview pane for file viewing.
+
+- Set `Authorization` header: `Bearer <ACCESS_TOKEN>`
+- Call:
+  - `GET /reports/attendance/daily.pdf?date=YYYY-MM-DD`
+  - `GET /reports/attendance/daily.xlsx?date=YYYY-MM-DD`
+- In Postman, click the arrow next to **Send** and choose **Send and Download**
+- Save with proper extension: `.pdf` or `.xlsx`
+- Open files locally:
+  - `.pdf` with a PDF reader
+  - `.xlsx` with Excel / LibreOffice / Google Sheets
+
+Note: seeing XML/text in Postman preview for `.xlsx` is normal preview behavior for a binary Excel package.
+
 ## Email Notes (Dev Mode)
 
 - Email sending is queue-based through Bull (`mail` queue) and Redis.
@@ -244,3 +260,12 @@ On every pull request to `master` or `develop`:
   - Run mail integration tests
 
 Both jobs run with concurrency control to cancel stale runs on new commits.
+
+👤 **Author**
+
+- GitHub: [RolandM99](https://github.com/RolandM99)
+- LinkedIn: [Roland N. Mweze](https://www.linkedin.com/in/roland-mweze/)
+- Twitter: [ManfulMwez](https://twitter.com/ManfulMwez)
+
+## ⭐️ Show your support <a name="support"></a>
+> Write a message to encourage readers to support your project
