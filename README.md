@@ -80,9 +80,9 @@ yarn start:dev
 
 Key URLs:
 
-- API base: `http://localhost:3000/api/v1`
-- Swagger UI: `http://localhost:3000/docs`
-- Health (no auth): `http://localhost:3000/health`
+- API base: http://localhost:3000/api/v1
+- Swagger UI: http://localhost:3000/docs
+- Health (no auth): http://localhost:3000/health
 
 ## Testing
 
