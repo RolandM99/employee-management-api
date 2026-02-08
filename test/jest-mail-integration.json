@@ -1,0 +1,22 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testRegex": "mail-queue.integration-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/test/"],
+  "moduleNameMapper": {
+    "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1",
+    "^@app/common(|/.*)$": "<rootDir>/libs/common/src/$1",
+    "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1",
+    "^@app/users(|/.*)$": "<rootDir>/libs/users/src/$1",
+    "^@app/auth(|/.*)$": "<rootDir>/libs/auth/src/$1",
+    "^@app/employees(|/.*)$": "<rootDir>/libs/employees/src/$1",
+    "^@app/attendance(|/.*)$": "<rootDir>/libs/attendance/src/$1",
+    "^@app/mail(|/.*)$": "<rootDir>/libs/mail/src/$1",
+    "^@app/reports(|/.*)$": "<rootDir>/libs/reports/src/$1",
+    "^@app/health(|/.*)$": "<rootDir>/libs/health/src/$1"
+  }
+}
