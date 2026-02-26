@@ -45,7 +45,7 @@ async function bootstrap() {
       'NestJS v11 Employee Management + Attendance API. Versioned routes are under /api/v1.',
     )
     .setVersion('1.0')
-    .addServer('/api/v1', 'Version 1')
+    .addServer('', 'Version 1')
     .addBearerAuth({
       type: 'http',
       scheme: 'bearer',

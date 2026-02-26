@@ -4,6 +4,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import {
   CreateEmployeeDto,
+  EmployeeAttendanceCountDto,
   ListEmployeesQueryDto,
   ListEmployeesResponseDto,
   UpdateEmployeeDto,
@@ -48,6 +49,32 @@ export class EmployeesService {
         total,
       },
     };
+  }
+
+  // Getting the list of employees with their count of attendances and their ID and names (array of emplyees object, each object has id, names and attendancesCount)
+  async findAllWithAttendanceCount(): Promise<EmployeeAttendanceCountDto[]> {
+    const results = await this.employeesRepository
+      /**
+       *  As suggested, when we were at the office, let use this single SQL query:
+       * SELECT employee.id, employee.names, COUNT(attendance.id) AS attendancesCount
+       * FROM employees employee
+       * LEFT JOIN attendances attendance ON attendance.employeeId = employee.id
+       * GROUP BY employee.id, employee.names
+       * */
+      .createQueryBuilder('employee')
+      .select('employee.id', 'id')
+      .addSelect('employee.names', 'names')
+      .addSelect('COUNT(attendance.id)', 'attendancesCount')
+      .leftJoin('employee.attendances', 'attendance')
+      .groupBy('employee.id')
+      .addGroupBy('employee.names')
+      .getRawMany<{ id: string; names: string; attendancesCount: string }>();
+
+    return results.map((row) => ({
+      id: row.id,
+      names: row.names,
+      attendancesCount: Number(row.attendancesCount),
+    }));
   }
 
   async findById(id: string): Promise<Employee> {

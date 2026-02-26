@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { EmployeesService } from './employees.service';
 import {
   CreateEmployeeDto,
+  EmployeeAttendanceCountDto,
   EmployeeResponseDto,
   ListEmployeesQueryDto,
   ListEmployeesResponseDto,
@@ -39,6 +40,13 @@ export class EmployeesController {
   @ApiResponse({ status: 200, type: ListEmployeesResponseDto })
   async findAll(@Query() query: ListEmployeesQueryDto): Promise<ListEmployeesResponseDto> {
     return this.employeesService.findAll(query);
+  }
+
+  @Get('attendance-count')
+  @ApiOperation({ summary: 'List employees with their attendance count' })
+  @ApiResponse({ status: 200, type: [EmployeeAttendanceCountDto] })
+  async findAllWithAttendanceCount(): Promise<EmployeeAttendanceCountDto[]> {
+    return this.employeesService.findAllWithAttendanceCount();
   }
 
   @Get(':id')
