@@ -10,6 +10,7 @@ describe('EmployeesController', () => {
     employeesService = {
       create: jest.fn(),
       findAll: jest.fn(),
+      findAllWithAttendanceCount: jest.fn(),
       findById: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
@@ -80,5 +81,18 @@ describe('EmployeesController', () => {
 
     expect(employeesService.remove).toHaveBeenCalledWith('employee-id');
     expect(result).toEqual({ message: 'Employee deleted successfully' });
+  });
+
+  it('lists employees with attendance count through service', async () => {
+    const payload = [
+      { id: 'emp-1', names: 'John Doe', attendancesCount: 5 },
+      { id: 'emp-2', names: 'Jane Doe', attendancesCount: 0 },
+    ];
+    (employeesService.findAllWithAttendanceCount as jest.Mock).mockResolvedValue(payload);
+
+    const result = await controller.findAllWithAttendanceCount();
+
+    expect(employeesService.findAllWithAttendanceCount).toHaveBeenCalled();
+    expect(result).toEqual(payload);
   });
 });

@@ -11,6 +11,7 @@ type EmployeeRepositoryMock = {
   findAndCount: jest.Mock;
   findOne: jest.Mock;
   delete: jest.Mock;
+  createQueryBuilder: jest.Mock;
 };
 
 describe('EmployeesService', () => {
@@ -29,12 +30,22 @@ describe('EmployeesService', () => {
   };
 
   beforeEach(async () => {
+    const qbMock = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      addGroupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    };
+
     repository = {
       create: jest.fn(),
       save: jest.fn(),
       findAndCount: jest.fn(),
       findOne: jest.fn(),
       delete: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(qbMock),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -141,5 +152,46 @@ describe('EmployeesService', () => {
     repository.delete.mockResolvedValue({ affected: 0, raw: {} });
 
     await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  describe('findAllWithAttendanceCount', () => {
+    it('returns employees with attendance counts', async () => {
+      const qb = repository.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([
+        { id: 'emp-1', names: 'John Doe', attendancesCount: '5' },
+        { id: 'emp-2', names: 'Jane Doe', attendancesCount: '0' },
+      ]);
+
+      const result = await service.findAllWithAttendanceCount();
+
+      expect(repository.createQueryBuilder).toHaveBeenCalledWith('employee');
+      expect(qb.leftJoin).toHaveBeenCalledWith('employee.attendances', 'attendance');
+      expect(qb.groupBy).toHaveBeenCalledWith('employee.id');
+      expect(result).toEqual([
+        { id: 'emp-1', names: 'John Doe', attendancesCount: 5 },
+        { id: 'emp-2', names: 'Jane Doe', attendancesCount: 0 },
+      ]);
+    });
+
+    it('returns empty array when no employees exist', async () => {
+      const qb = repository.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([]);
+
+      const result = await service.findAllWithAttendanceCount();
+
+      expect(result).toEqual([]);
+    });
+
+    it('casts attendancesCount from string to number', async () => {
+      const qb = repository.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([
+        { id: 'emp-1', names: 'John Doe', attendancesCount: '12' },
+      ]);
+
+      const result = await service.findAllWithAttendanceCount();
+
+      expect(typeof result[0].attendancesCount).toBe('number');
+      expect(result[0].attendancesCount).toBe(12);
+    });
   });
 });
