@@ -3,3 +3,4 @@ export * from './update-employee.dto';
 export * from './list-employees-query.dto';
 export * from './employee-response.dto';
 export * from './list-employees-response.dto';
+export * from './employee-attendance-count.dto';
